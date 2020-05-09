@@ -36,28 +36,24 @@ contract('Decentralized Star Notary', async accounts => {
 
             assert.equal(exists, false);
         });
-
-        it('The star name matches input', async function () {
+		it('The star name matches input', async function () {
             assert.equal(newStar[0], starOne.name);
         });
 
-        it('The star story matches input', async function () {
+		it('The star story matches input', async function () {
             assert.equal(newStar[1], starOne.story);
         });
-
-        it('The star right ascend matches "ra_" + input', async function () {
+		it('The star right ascend matches "ra_" + input', async function () {
             assert.equal(newStar[2], `ra_${starOne.rightAscend}`);
         });
 
         it('The star declination matches "dec_" + input', async function () {
             assert.equal(newStar[3], `dec_${starOne.declination}`);
         });
-
-        it('The star magnitude matches "mag_" + input', async function () {
+		it('The star magnitude matches "mag_" + input', async function () {
             assert.equal(newStar[4], `mag_${starOne.magnitude}`);
         });
-
-        it('Create another star, when one coordinate is different', async function () {
+		it('Create another star, when one coordinate is different', async function () {
             await this.contract.createStar(starTwo.name, starTwo.story, starTwo.rightAscend, starTwo.declination, starOne.magnitude, starTokenTwo, {from: seller});
             let anotherStar = await this.contract.tokenIdToStarInfo(starTokenTwo);
             assert.equal(anotherStar[0], starTwo.name);

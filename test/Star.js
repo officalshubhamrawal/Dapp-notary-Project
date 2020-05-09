@@ -6,24 +6,18 @@ module.exports = class Star {
         this._dec = dec;
         this._mag = mag;
     }
-
-    get name() {
+	get name() {
         return this._name;
     }
-
-    get story() {
+	get story() {
         return this._story;
     }
-
-    get rightAscend() {
+	get rightAscend() {
         return this._ra;
     }
-
-    get declination() {
+	get declination() {
         return this._dec;
     }
-
-    get magnitude() {
+	get magnitude() {
         return this._mag;
-    }
-};
+    }};
