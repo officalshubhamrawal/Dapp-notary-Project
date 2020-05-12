@@ -1,89 +1,72 @@
-pragma solidity ^0.4.23;
+pragma solidity >=0.4.24;
+import "../node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
 
-import 'openzeppelin-solidity/contracts/token/ERC721/ERC721Mintable.sol';
-contract StarNotary is ERC721Mintable {
 
+contract StarNotary is ERC721 {
     struct Star {
-        string name;
-        string story;
-        string ra;
-        string dec;
-        string mag;
+        string name;}
+    string public constant name = "flickStar token";
+    string public constant symbol = "FST";
+    mapping(uint256 => Star) public tokenIdToStarInfo;
+    mapping(uint256 => uint256) public starsForSale;
+
+    function createStar(string memory _name, uint256 _tokenId) public { 
+        Star memory newStar = Star(_name);
+        tokenIdToStarInfo[_tokenId] = newStar; 
+        _mint(msg.sender, _tokenId);
     }
- mapping(uint256 => Star) public _tokenIdToStarInfo;
- mapping(uint256 => bool) _isTokenId;
- mapping(bytes32 => uint256) _isStar;
- mapping(uint256 => uint256) public _starsForSale;
-
-constructor(string name, string symbol) ERC721Full (name, symbol) public {}
-
-function createStar(string _name, string _story, string _ra, string _dec, string _mag, uint256 _tokenId) public {
-        require(checkIfStarExists(_ra, _dec, _mag) == false, "ERROR: The star with these coordinates already exists");
-
-        Star memory starData = Star(_name, _story, concatTwoStrings("ra_", _ra), concatTwoStrings("dec_", _dec), concatTwoStrings("mag_", _mag));
-
-        _tokenIdToStarInfo[_tokenId] = starData;
-        _isTokenId[_tokenId] = true;
-       bytes memory coordinates = bytes(concatThreeStrings(_ra, _dec, _mag));
-        bytes32 coordinatesHash = keccak256(coordinates);
-        _isStar[coordinatesHash] = _tokenId;
-
-       _mint(msg.sender, _tokenId);
+    function putStarUpForSale(uint256 _tokenId, uint256 _price) public {
+        require(ownerOf(_tokenId) == msg.sender, "You can't sale the Star you don't owned");
+        starsForSale[_tokenId] = _price;
+    }
+    function _make_payable(address x) internal pure returns (address payable) {
+        return address(uint160(x));
     }
 
-	function checkIfStarExists(string _ra, string _dec, string _mag) public view returns (bool) {
-        bytes memory coordinates = bytes(concatThreeStrings(_ra, _dec, _mag));
-        if (_isStar[keccak256(coordinates)] != 0) {
-            return true;
-        }
-        return false;
-    }
-
-		function tokenIdToStarInfo(uint256 _tokenId) public view returns (string name, string story, string ra, string dec, string mag) {
-        require(_isTokenId[_tokenId] == true, "ERROR: This token does not exists");
-        Star memory starData = _tokenIdToStarInfo[_tokenId];
-        return (starData.name, starData.story, starData.ra, starData.dec, starData.mag);
-    }
-
- function putStarUpForSale(uint256 _tokenId, uint256 _price) public {
-        require(this.ownerOf(_tokenId) == msg.sender);
-
-        _starsForSale[_tokenId] = _price;
-    }
-
- function buyStar(uint256 _tokenId) public payable {
-        require(_starsForSale[_tokenId] > 0);
-
-        uint256 starCost = _starsForSale[_tokenId];
-        address starOwner = this.ownerOf(_tokenId);
-        require(msg.value >= starCost);
-
-        _removeTokenFrom(starOwner, _tokenId);
-        _addTokenTo(msg.sender, _tokenId);
-
-        starOwner.transfer(starCost);
-
-        if (msg.value > starCost) {
+    function buyStar(uint256 _tokenId) public  payable {
+        require(starsForSale[_tokenId] > 0, "The Star should be up for sale");
+        uint256 starCost = starsForSale[_tokenId];
+        address ownerAddress = ownerOf(_tokenId);
+        require(msg.value > starCost, "You need to have enough Ether");
+        _transferFrom(ownerAddress, msg.sender, _tokenId); 
+        address payable ownerAddressPayable = _make_payable(ownerAddress); 
+        ownerAddressPayable.transfer(starCost);
+        if(msg.value > starCost) {
             msg.sender.transfer(msg.value - starCost);
-        } }
-
- function concatTwoStrings(string _string1, string _string2) internal constant returns (string){
-        bytes memory string1 = bytes(_string1);
-        bytes memory string2 = bytes(_string2);
-
-        string memory combinedString = new string(string1.length + string2.length);
-
-        bytes memory combinedStringArray = bytes(combinedString);
-
-        for (uint i = 0; i < string1.length; i++) {
-            combinedStringArray[i] = string1[i];
         }
-        for (i = 0; i < string2.length; i++) {
-            combinedStringArray[string1.length + i] = string2[i];
+    }
+    function lookUptokenIdToStarInfo (uint _tokenId) public view returns (string memory) {
+        return tokenIdToStarInfo[_tokenId].name;
+    }
+    function exchangeStars(uint256 _tokenId1, uint256 _tokenId2) public {
+        address tokenExchanger;
+        address tokenReceiver;
+        uint256 token1;
+        uint256 token2;
+        if (ownerOf(_tokenId1) == msg.sender) {
+            tokenExchanger = ownerOf(_tokenId1);
+            tokenReceiver = ownerOf(_tokenId2);
+            token1 = _tokenId1;
+            token2 = _tokenId2;
         }
-        return string(combinedStringArray);
+        else if (ownerOf(_tokenId2) == msg.sender) {
+            tokenExchanger = ownerOf(_tokenId2);
+            tokenReceiver = ownerOf(_tokenId1);
+            token1 = _tokenId2;
+            token2 = _tokenId1;
+        }
+        else {
+            revert("You can't exchange a star you don't own.");
+        }
+        _transferFrom(tokenExchanger, tokenReceiver, token1);
+        _transferFrom(tokenReceiver, tokenExchanger, token2);
     }
-function concatThreeStrings(string _string1, string _string2, string _string3) internal constant returns (string) {
-        return concatTwoStrings(concatTwoStrings(_string1, _string2), _string3);
+
+    function transferStar(address _to1, uint256 _tokenId) public {
+        //1. Check if the sender is the ownerOf(_tokenId)
+        require(ownerOf(_tokenId) == msg.sender, "You can't transfer a star you don't own.");
+        //2. Use the transferFrom(from, to, tokenId); function to transfer the Star
+        _transferFrom(msg.sender, _to1, _tokenId);
     }
+
 }

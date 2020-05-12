@@ -1,5 +1,5 @@
 {
-  "name": "smart_contracts",
+  "name": "project_5_starter_code",
   "version": "1.0.0",
   "description": "",
   "main": "truffle-config.js",
@@ -9,14 +9,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ganache-cli": "^6.1.8",
-    "openzeppelin-solidity": "2.0.0-rc.1",
-    "truffle": "^4.1.14",
-    "truffle-hdwallet-provider": "0.0.6",
-    "web3": "^1.0.0-beta.36"
+    "openzeppelin-solidity": "^2.5.0",
+    "truffle-hdwallet-provider": "^1.0.17"
   }
 }
